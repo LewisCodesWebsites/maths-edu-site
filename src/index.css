@@ -1,0 +1,42 @@
+/* stylelint-disable at-rule-no-unknown */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom global styles */
+body {
+  @apply bg-gray-50 text-gray-900 min-h-screen font-sans;
+}
+
+h1, h2, h3, h4 {
+  @apply font-bold;
+}
+
+button {
+  @apply bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-xl transition;
+}
+
+input, select {
+  @apply border border-gray-300 rounded-xl p-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400;
+}
+
+.container {
+  @apply max-w-7xl mx-auto px-4;
+}
+
+.card {
+  @apply bg-white rounded-2xl shadow-md p-6;
+}
+
+.link {
+  @apply text-blue-600 hover:underline;
+}
+
+/* Responsive helpers */
+.grid-center {
+  @apply grid place-items-center min-h-screen;
+}
+
+.header {
+  @apply flex justify-between items-center py-6;
+}

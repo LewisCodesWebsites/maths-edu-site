@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/maths-edu-site/static/css/main.1dcada56.css",
-    "main.js": "/maths-edu-site/static/js/main.216cd124.js",
+    "main.js": "/maths-edu-site/static/js/main.5a4aa624.js",
     "index.html": "/maths-edu-site/index.html",
     "main.1dcada56.css.map": "/maths-edu-site/static/css/main.1dcada56.css.map",
-    "main.216cd124.js.map": "/maths-edu-site/static/js/main.216cd124.js.map"
+    "main.5a4aa624.js.map": "/maths-edu-site/static/js/main.5a4aa624.js.map"
   },
   "entrypoints": [
     "static/css/main.1dcada56.css",
-    "static/js/main.216cd124.js"
+    "static/js/main.5a4aa624.js"
   ]
 }

@@ -109,6 +109,9 @@ const generateVerificationCode = () => Math.floor(100000 + Math.random() * 90000
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
 
+  // Debug log for admin login attempts
+  console.log('Login attempt:', { email, passwordLength: password ? password.length : 0 });
+
   try {
     // Check if it's an admin
     if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {

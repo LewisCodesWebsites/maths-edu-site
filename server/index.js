@@ -5,6 +5,8 @@ import Stripe from 'stripe';
 import mongoose from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 import nodemailer from 'nodemailer';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
 const app = express();
@@ -727,6 +729,18 @@ app.delete('/api/parent/partners/:parentEmail/:partnerEmail', async (req, res) =
     console.error('Error removing partner:', error);
     res.status(500).json({ success: false, error: 'Failed to remove partner' });
   }
+});
+
+// Serve static files from the React build directory
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const buildPath = path.join(__dirname, '../build');
+app.use(express.static(buildPath));
+
+// Catch-all handler: for any request that doesn't match an API route, serve React's index.html
+app.get(/^\/((?!api).)*/, (req, res) => {
+  res.sendFile(path.join(buildPath, 'index.html'));
 });
 
 app.listen(port, () => {

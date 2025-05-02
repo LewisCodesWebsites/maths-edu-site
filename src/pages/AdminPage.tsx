@@ -2,6 +2,7 @@
 import { useAuth } from '../contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import API_BASE from '../api';
 
 type UserData = {
   id: string;
@@ -61,7 +62,7 @@ const AdminPage = () => {
     setError(null);
     
     try {
-      const response = await fetch('http://localhost:4001/api/admin/users', {
+      const response = await fetch(`${API_BASE}/api/admin/users`, {
         headers: {
           'Content-Type': 'application/json',
         }
@@ -86,7 +87,7 @@ const AdminPage = () => {
     setLogsError(null);
     
     try {
-      const response = await fetch('http://localhost:4001/api/admin/system-logs', {
+      const response = await fetch(`${API_BASE}/api/admin/system-logs`, {
         headers: {
           'Content-Type': 'application/json',
           'Admin-Email': user?.email || 'Unknown',
@@ -113,7 +114,7 @@ const AdminPage = () => {
     setSuccessMsg(null);
     
     try {
-      const response = await fetch(`http://localhost:4001/api/admin/users/${userId}`, {
+      const response = await fetch(`${API_BASE}/api/admin/users/${userId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -154,7 +155,7 @@ const AdminPage = () => {
       : { schoolName: newName, adminEmail: newEmail, password: newPassword, numberOfTeachers: newNumberOfTeachers };
 
     try {
-      const response = await fetch(`http://localhost:4001${endpoint}`, {
+      const response = await fetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -196,7 +197,7 @@ const AdminPage = () => {
         ? '/api/admin/update-parent'
         : '/api/admin/update-school';
         
-      const response = await fetch(`http://localhost:4001${endpoint}/${userToEdit.id}`, {
+      const response = await fetch(`${API_BASE}${endpoint}/${userToEdit.id}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',

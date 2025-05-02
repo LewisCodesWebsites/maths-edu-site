@@ -1,5 +1,6 @@
 // src/contexts/AuthContext.tsx
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import API_BASE from '../api';
 
 type UserRole = 'parent' | 'teacher' | 'school' | 'admin';
 
@@ -80,8 +81,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     try {
       const endpoint = userData.role === 'parent' 
-        ? 'http://localhost:4001/api/register/parent'
-        : 'http://localhost:4001/api/register/school';
+        ? `${API_BASE}/api/register/parent`
+        : `${API_BASE}/api/register/school`;
         
       const response = await fetch(endpoint, {
         method: 'POST',

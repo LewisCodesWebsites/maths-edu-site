@@ -33,6 +33,7 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
   console.warn('ADMIN_EMAIL or ADMIN_PASSWORD not set in .env; admin login disabled');
 }
+console.log('ADMIN_EMAIL from env:', ADMIN_EMAIL);
 
 // Connect to MongoDB
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/schoolDashboard';

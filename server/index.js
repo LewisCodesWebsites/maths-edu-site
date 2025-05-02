@@ -8,7 +8,7 @@ import nodemailer from 'nodemailer';
 
 dotenv.config();
 const app = express();
-const port = 4001;
+const port = process.env.PORT || 4001;
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // Setup email transporter

@@ -743,7 +743,7 @@ app.delete('/api/parent/partners/:parentEmail/:partnerEmail', async (req, res) =
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const buildPath = path.join(__dirname, '../build');
+const buildPath = path.join(__dirname, 'build');
 app.use(express.static(buildPath));
 
 // Catch-all handler: for any request that doesn't match an API route, serve React's index.html

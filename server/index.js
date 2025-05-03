@@ -26,7 +26,15 @@ const transporter = nodemailer.createTransport({
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
-app.use(cors());
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://mathsmastery.onrender.com",
+  "https://lewiscodeswebsites.github.io"
+];
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
 app.use(express.json());
 
 // Setup admin credentials from environment

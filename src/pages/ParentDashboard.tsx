@@ -2,6 +2,7 @@
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import API_BASE from '../api';
 
 type Partner = {
   name: string;
@@ -46,7 +47,7 @@ const ParentDashboard = () => {
     
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:4001/api/parent/partners/${encodeURIComponent(user.email)}`, {
+      const response = await fetch(`${API_BASE}/api/parent/partners/${encodeURIComponent(user.email)}`, {
         headers: {
           'Content-Type': 'application/json',
         }
@@ -99,7 +100,7 @@ const ParentDashboard = () => {
     setMessage('');
     
     try {
-      const response = await fetch(`http://localhost:4001/api/parent/settings/${encodeURIComponent(user.email)}`, {
+      const response = await fetch(`${API_BASE}/api/parent/settings/${encodeURIComponent(user.email)}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -138,7 +139,7 @@ const ParentDashboard = () => {
     setMessage('');
     
     try {
-      const response = await fetch(`http://localhost:4001/api/parent/partners/${encodeURIComponent(user.email)}`, {
+      const response = await fetch(`${API_BASE}/api/parent/partners/${encodeURIComponent(user.email)}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -178,7 +179,7 @@ const ParentDashboard = () => {
     setMessage('');
     
     try {
-      const response = await fetch(`http://localhost:4001/api/parent/partners/${encodeURIComponent(user.email)}/${encodeURIComponent(email)}`, {
+      const response = await fetch(`${API_BASE}/api/parent/partners/${encodeURIComponent(user.email)}/${encodeURIComponent(email)}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

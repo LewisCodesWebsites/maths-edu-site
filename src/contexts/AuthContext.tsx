@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:4001/api/login', {
+      const response = await fetch(`${API_BASE}/api/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -132,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:4001/api/children', {
+      const response = await fetch(`${API_BASE}/api/children`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -172,7 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:4001/api/children/${username}`, {
+      const response = await fetch(`${API_BASE}/api/children/${username}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

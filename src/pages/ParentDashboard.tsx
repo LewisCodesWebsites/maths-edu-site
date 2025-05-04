@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import API_BASE from '../api';
+import Logo from '../pictures/logo.svg';
 
 type Partner = {
   name: string;
@@ -203,17 +204,6 @@ const ParentDashboard = () => {
     }
   };
 
-  // Math-themed SVG logo component
-  const MathLogoSVG = () => (
-    <svg className="h-10 w-auto" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="60" height="60" rx="8" fill="#4F46E5"/>
-      <path d="M15 30L30 15L45 30L30 45L15 30Z" fill="white"/>
-      <path d="M23 23L37 37" stroke="#4338CA" strokeWidth="4" strokeLinecap="round"/>
-      <path d="M23 37L37 23" stroke="#4338CA" strokeWidth="4" strokeLinecap="round"/>
-      <text x="70" y="40" fontFamily="Arial" fontSize="24" fontWeight="bold" fill="#4F46E5">MathWizard</text>
-    </svg>
-  );
-
   // Render settings modal
   const renderSettingsModal = () => {
     if (!showSettings) return null;
@@ -383,36 +373,28 @@ const ParentDashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white">
       {/* Hero Header */}
-      <header className="bg-indigo-700 text-white">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-4">
-              <MathLogoSVG />
-              <div>
-                <p className="text-xs font-medium opacity-75">Welcome back</p>
-                <p className="font-bold">{user?.name || 'Parent'}</p>
-              </div>
+      <header className="header">
+        <div className="container flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <img src={Logo} alt="MathWizard Logo" className="h-14 w-auto drop-shadow-lg animate-float" />
+            <span className="text-2xl font-extrabold text-primary tracking-tight">MathWizard</span>
+            <div className="ml-4">
+              <p className="text-xs font-medium text-gray-600">Welcome back</p>
+              <p className="font-bold text-primary">{user?.name || 'Parent'}</p>
             </div>
-            <div className="flex items-center space-x-4">
-              <button 
-                onClick={() => setShowSettings(true)}
-                className="text-sm bg-indigo-800 text-white px-4 py-2 rounded-xl hover:bg-indigo-900 shadow-lg"
-              >
-                Settings
-              </button>
-              <button 
-                onClick={logout}
-                className="text-sm bg-red-600 text-white px-4 py-2 rounded-xl hover:bg-red-700 shadow-lg"
-              >
-                Logout
-              </button>
-            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            <button onClick={() => setShowSettings(true)} className="btn-primary">Settings</button>
+            <button onClick={logout} className="btn-primary">Logout</button>
           </div>
         </div>
       </header>
+      {/* Fun floating background shapes */}
+      <div className="bg-shape w-72 h-72 bg-primary top-[-80px] left-[-80px] animate-float" style={{zIndex:0}}></div>
+      <div className="bg-shape w-60 h-60 bg-primary bottom-[-60px] right-[-60px] animate-float" style={{zIndex:0}}></div>
 
       {/* Hero Banner */}
-      <div className="bg-indigo-600 text-white py-12 relative overflow-hidden">
+      <div className="bg-gradient-to-r from-primary to-green text-white py-12 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div className="relative z-10">
@@ -450,7 +432,7 @@ const ParentDashboard = () => {
         </svg>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+      <main className="container py-10">
         {error && !showSettings && (
           <div className="mb-6 p-4 bg-red-100 text-red-800 rounded-xl shadow">
             {error}
@@ -463,12 +445,12 @@ const ParentDashboard = () => {
           </div>
         )}
         
-        <h2 className="text-2xl font-bold text-indigo-900 mb-8 text-center">Student Dashboard</h2>
+        <h2 className="text-3xl font-extrabold text-primary mb-8 text-center drop-shadow-lg">Student Dashboard</h2>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Children List */}
           <div className="lg:col-span-2">
-            <div className="bg-white shadow-lg rounded-2xl p-6 border border-indigo-100">
+            <div className="card">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-indigo-900">Your Children</h2>
                 <div className="text-sm text-indigo-600 font-medium px-3 py-1 bg-indigo-100 rounded-full">
@@ -563,7 +545,7 @@ const ParentDashboard = () => {
             </div>
 
             {/* Featured Content - Math Learning Resources */}
-            <div className="mt-8 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl p-6 shadow-lg">
+            <div className="mt-8 bg-gradient-to-r from-primary to-primary text-white rounded-3xl p-10 shadow-2xl">
               <h3 className="text-xl font-bold mb-4">Math Learning Resources</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-white bg-opacity-20 p-4 rounded-xl">
@@ -628,150 +610,30 @@ const ParentDashboard = () => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Email</p>
-                    <p className="font-medium">{user?.email}</p>
+                    <p className="text-sm text-gray-500">{user?.email}</p>
                   </div>
                 </div>
-                <div className="flex items-center">
-                  <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center mr-3">
-                    <svg className="h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Name</p>
-                    <p className="font-medium">{user?.name || 'Not provided'}</p>
-                  </div>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center mr-3">
-                    <svg className="h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Child Account Limit</p>
-                    <div className="flex items-center">
-                      <div className="bg-indigo-100 rounded-full w-full h-2 mr-2">
-                        <div 
-                          className="bg-indigo-600 h-2 rounded-full" 
-                          style={{ width: `${Math.min(100, (currentChildren/maxAllowed) * 100)}%` }}
-                        ></div>
-                      </div>
-                      <span className="text-indigo-700 font-medium text-sm">{currentChildren}/{maxAllowed}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center mr-3">
-                    <svg className="h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Managing Partners</p>
-                    <div className="flex items-center">
-                      <div className="bg-indigo-100 rounded-full w-full h-2 mr-2">
-                        <div 
-                          className="bg-indigo-600 h-2 rounded-full" 
-                          style={{ width: `${Math.min(100, (partners.length/4) * 100)}%` }}
-                        ></div>
-                      </div>
-                      <span className="text-indigo-700 font-medium text-sm">{partners.length}/4</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Math Progress Stats */}
-            <div className="bg-gradient-to-br from-indigo-800 to-purple-900 text-white shadow-lg rounded-2xl p-6">
-              <h2 className="text-xl font-bold mb-6">Math Progress</h2>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="font-medium">Addition & Subtraction</span>
-                    <span>78%</span>
-                  </div>
-                  <div className="w-full bg-white bg-opacity-30 rounded-full h-2">
-                    <div className="bg-green-400 h-2 rounded-full" style={{width: '78%'}}></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="font-medium">Multiplication</span>
-                    <span>65%</span>
-                  </div>
-                  <div className="w-full bg-white bg-opacity-30 rounded-full h-2">
-                    <div className="bg-yellow-400 h-2 rounded-full" style={{width: '65%'}}></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="font-medium">Division</span>
-                    <span>42%</span>
-                  </div>
-                  <div className="w-full bg-white bg-opacity-30 rounded-full h-2">
-                    <div className="bg-orange-400 h-2 rounded-full" style={{width: '42%'}}></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="font-medium">Fractions</span>
-                    <span>25%</span>
-                  </div>
-                  <div className="w-full bg-white bg-opacity-30 rounded-full h-2">
-                    <div className="bg-blue-400 h-2 rounded-full" style={{width: '25%'}}></div>
-                  </div>
-                </div>
+                {/* Close all open divs and main */}
               </div>
             </div>
           </div>
         </div>
       </main>
-      
       {/* Footer */}
-      <footer className="bg-indigo-900 text-white py-12 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <footer className="bg-primary text-white py-10 mt-16 rounded-t-3xl shadow-2xl">
+        <div className="container">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
-              <MathLogoSVG />
-              <p className="mt-4 text-indigo-100">
+              <img src={Logo} alt="MathWizard Logo" className="h-10 w-auto" />
+              <p className="mt-4 text-secondary">
                 Helping children excel in mathematics through interactive learning and practice.
               </p>
             </div>
-            <div className="md:col-span-2 grid grid-cols-2 md:grid-cols-3 gap-8">
-              <div>
-                <h3 className="font-bold text-lg mb-4">Features</h3>
-                <ul className="space-y-2 text-indigo-100">
-                  <li><a href="#" className="hover:text-white hover:underline">Interactive Lessons</a></li>
-                  <li><a href="#" className="hover:text-white hover:underline">Math Games</a></li>
-                  <li><a href="#" className="hover:text-white hover:underline">Progress Tracking</a></li>
-                  <li><a href="#" className="hover:text-white hover:underline">Personalized Learning</a></li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="font-bold text-lg mb-4">Support</h3>
-                <ul className="space-y-2 text-indigo-100">
-                  <li><a href="#" className="hover:text-white hover:underline">Help Center</a></li>
-                  <li><a href="#" className="hover:text-white hover:underline">Contact Us</a></li>
-                  <li><a href="#" className="hover:text-white hover:underline">FAQ</a></li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="font-bold text-lg mb-4">Legal</h3>
-                <ul className="space-y-2 text-indigo-100">
-                  <li><a href="#" className="hover:text-white hover:underline">Terms of Service</a></li>
-                  <li><a href="#" className="hover:text-white hover:underline">Privacy Policy</a></li>
-                </ul>
-              </div>
-            </div>
+            {/* ...existing code... */}
           </div>
-          <div className="mt-8 pt-8 border-t border-indigo-800 text-center text-indigo-200">
-            <p>&copy; {new Date().getFullYear()} MathWizard. All rights reserved.</p>
-          </div>
+          {/* ...existing code... */}
         </div>
       </footer>
-      
       {/* Settings Modal */}
       {renderSettingsModal()}
     </div>

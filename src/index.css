@@ -5,31 +5,36 @@
 
 /* Custom global styles */
 body {
-  @apply bg-gray-50 text-gray-900 min-h-screen font-sans;
+  @apply bg-gradient-to-br from-background via-white to-primary/10 text-text min-h-screen font-sans;
 }
 
-h1, h2, h3, h4 {
-  @apply font-bold;
+h1, h2, h3, h4, h5, h6 {
+  @apply text-text font-extrabold tracking-tight;
 }
 
 button {
-  @apply bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-xl transition;
+  @apply bg-primary text-white font-bold rounded-2xl shadow-xl hover:scale-105 hover:shadow-2xl transition-all duration-200 border-0;
 }
 
 input, select {
-  @apply border border-gray-300 rounded-xl p-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400;
+  @apply border border-gray-200 rounded-2xl p-3 w-full focus:outline-none focus:ring-4 focus:ring-primary/30 bg-white shadow-sm;
 }
 
 .container {
-  @apply max-w-7xl mx-auto px-4;
+  @apply mx-auto px-4;
 }
 
 .card {
-  @apply bg-white rounded-2xl shadow-md p-6;
+  @apply bg-white rounded-3xl shadow-2xl border-0 p-8 transition-all duration-200 hover:scale-105 hover:shadow-2xl;
 }
 
 .link {
-  @apply text-blue-600 hover:underline;
+  @apply text-primary hover:underline font-semibold;
+}
+
+/* Buttons */
+.btn-primary, .btn-secondary, .btn-accent, button {
+  @apply bg-primary text-white font-bold rounded-2xl shadow-xl hover:scale-105 hover:shadow-2xl transition-all duration-200 border-0;
 }
 
 /* Responsive helpers */
@@ -38,5 +43,19 @@ input, select {
 }
 
 .header {
-  @apply flex justify-between items-center py-6;
+  @apply flex justify-between items-center py-8 px-2 bg-white/80 backdrop-blur-lg shadow-lg rounded-b-3xl sticky top-0 z-50 mb-8;
+}
+
+/* Fun background shapes */
+.bg-shape {
+  @apply absolute rounded-full opacity-20 blur-2xl pointer-events-none;
+}
+
+/* Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.animate-float {
+  animation: float 3s ease-in-out infinite;
 }

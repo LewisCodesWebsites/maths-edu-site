@@ -2,24 +2,28 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import API_BASE from '../api';
 
-type UserRole = 'parent' | 'teacher' | 'school' | 'admin';
+type UserRole = 'parent' | 'teacher' | 'school' | 'admin' | 'child';
 
 type User = {
-  email: string;
+  email?: string;
   name?: string;
+  username?: string; // Added for child accounts
   role: UserRole;
   children?: string[];
   schoolId?: string;
   maxChildren?: number;
   availableChildSlots?: number;
+  parentEmail?: string; // Added for child accounts
+  yearGroup?: number; // Added for child accounts
 };
 
 type AuthContextType = {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
+  loginChild: (username: string, password: string) => Promise<boolean>; // New child login method
   register: (userData: any) => Promise<{ success: boolean, message?: string }>;
   logout: () => void;
-  addChild: (childData: { name: string, username: string }) => Promise<{ success: boolean, error?: string, child?: any }>;
+  addChild: (childData: { name: string, username: string, password?: string }) => Promise<{ success: boolean, error?: string, child?: any }>;
   removeChild: (username: string) => Promise<{ success: boolean, error?: string }>;
   isLoading: boolean;
 };
@@ -77,6 +81,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // New method for child login
+  const loginChild = async (username: string, password: string) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/login/child`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success && data.user) {
+        // Set child user data
+        setUser({
+          ...data.user,
+          role: 'child' // Ensure the role is set to child
+        });
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Child login error:', error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const register = async (userData: any) => {
     setIsLoading(true);
     try {
@@ -113,7 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('user');
   };
 
-  const addChild = async (childData: { name: string, username: string }) => {
+  const addChild = async (childData: { name: string, username: string, password?: string }) => {
     if (!user || user.role !== 'parent') {
       return { success: false, error: 'Only parents can add children' };
     }
@@ -140,7 +175,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({
           parentEmail: user.email,
           name: childData.name,
-          username: childData.username
+          username: childData.username,
+          password: childData.password // Now passing the password to the API
         })
       });
       
@@ -202,7 +238,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, addChild, removeChild, isLoading }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      login, 
+      loginChild, // Added the new child login method to the context
+      register, 
+      logout, 
+      addChild, 
+      removeChild, 
+      isLoading 
+    }}>
       {children}
     </AuthContext.Provider>
   );

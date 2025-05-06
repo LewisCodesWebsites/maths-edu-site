@@ -20,7 +20,7 @@ export default function LandingPage() {
       (ScrollTrigger as any).getAll().forEach((trigger: any) => trigger.kill());
       
       // Create a single ScrollTrigger for the iPad section
-      const ipadTrigger = (ScrollTrigger as any).create({
+      (ScrollTrigger as any).create({
         trigger: ipadSectionRef.current,
         start: 'top center',
         end: 'bottom center',

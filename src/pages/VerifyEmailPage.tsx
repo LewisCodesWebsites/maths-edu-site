@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
+import API_BASE from '../api';
 
 const VerifyEmailPage = () => {
   const [searchParams] = useSearchParams();
@@ -12,7 +13,7 @@ const VerifyEmailPage = () => {
 
   useEffect(() => {
     if (token) {
-      fetch(`http://localhost:4001/api/verify-email?token=${token}`)
+      fetch(`${API_BASE}/api/verify-email?token=${encodeURIComponent(token)}`)
         .then(res => res.json())
         .then(data => {
           if (data.success) {
@@ -37,8 +38,9 @@ const VerifyEmailPage = () => {
     }
     setStatus('loading'); setMessage('Verifying code...');
     try {
-      const res = await fetch('http://localhost:4001/api/verify-code', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+      const res = await fetch(`${API_BASE}/api/verify-code`, {
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code })
       });
       const data = await res.json();
@@ -47,7 +49,8 @@ const VerifyEmailPage = () => {
       } else {
         setStatus('error'); setMessage(data.error || 'Invalid code.');
       }
-    } catch {
+    } catch (error) {
+      console.error('Verification code error:', error);
       setStatus('error'); setMessage('Network error during code verification.');
     }
   };

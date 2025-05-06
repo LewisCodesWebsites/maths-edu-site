@@ -7,10 +7,11 @@ import { v4 as uuidv4 } from 'uuid';
 import nodemailer from 'nodemailer';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import bcrypt from 'bcrypt';
 
 dotenv.config();
 const app = express();
-const port = process.env.PORT || 4001;
+const port = process.env.PORT || 4002; // Changed from 4001 to 4002 to avoid conflict
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // Setup email transporter
@@ -59,8 +60,26 @@ const studentSchema = new mongoose.Schema({
   name: String,
 });
 
+// Define Child schema
+const childSchema = new mongoose.Schema({
+  name: String,
+  username: { type: String, unique: true },
+  password: String,
+  parentEmail: String, // Reference to parent's email
+  year: String, // UK school year
+  yearGroup: { type: Number, default: 5 },
+  progress: [{ 
+    subject: String,
+    topic: String, 
+    score: Number,
+    completedAt: { type: Date, default: Date.now } 
+  }],
+  createdAt: { type: Date, default: Date.now }
+});
+
 const Teacher = mongoose.model('Teacher', teacherSchema);
 const Student = mongoose.model('Student', studentSchema);
+const Child = mongoose.model('Child', childSchema);
 
 // Define Mongoose schemas and models
 const parentSchema = new mongoose.Schema({
@@ -107,6 +126,26 @@ const systemLogSchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now }
 });
 
+// Define Topic schema
+const topicSchema = new mongoose.Schema({
+  year: { type: String, required: true }, // e.g., 'reception', 'year1', etc.
+  section: { type: String, required: true }, // e.g., 'Basic Operators'
+  level: { type: String, enum: ['growing', 'exceeding', 'excelling'], required: true },
+  title: { type: String, required: true },
+  article: { type: String, required: true },
+  questions: [
+    {
+      question: String,
+      type: { type: String, enum: ['multiple-choice', 'short-answer', 'true-false'], default: 'multiple-choice' },
+      options: [String], // For multiple-choice
+      answer: mongoose.Schema.Types.Mixed // Could be string, array, etc.
+    }
+  ],
+  createdAt: { type: Date, default: Date.now }
+});
+
+const Topic = mongoose.model('Topic', topicSchema);
+
 const SystemLog = mongoose.model('SystemLog', systemLogSchema);
 
 const Parent = mongoose.model('Parent', parentSchema);
@@ -114,6 +153,19 @@ const School = mongoose.model('School', schoolSchema);
 
 // Helper to generate a 6-digit code
 const generateVerificationCode = () => Math.floor(100000 + Math.random() * 900000).toString();
+
+// Define salt rounds for bcrypt password hashing
+const SALT_ROUNDS = 10;
+
+// Helper function to hash passwords
+const hashPassword = async (password) => {
+  return await bcrypt.hash(password, SALT_ROUNDS);
+};
+
+// Helper function to compare password with hash
+const comparePassword = async (password, hash) => {
+  return await bcrypt.compare(password, hash);
+};
 
 // Add a login endpoint
 app.post('/api/login', async (req, res) => {
@@ -136,11 +188,33 @@ app.post('/api/login', async (req, res) => {
     }
 
     // Check if it's a parent
-    const parent = await Parent.findOne({ email, password });
+    const parent = await Parent.findOne({ email });
     if (parent) {
       if (!parent.verified) {
         return res.status(403).json({ success: false, error: 'Email not verified' });
       }
+      
+      // Check if the password is already hashed
+      let passwordValid = false;
+      if (parent.password.startsWith('$2b$') || parent.password.startsWith('$2a$')) {
+        // Password is already hashed, compare with bcrypt
+        passwordValid = await comparePassword(password, parent.password);
+      } else {
+        // Legacy password (not hashed), do a direct comparison
+        // This allows existing accounts to keep working
+        passwordValid = parent.password === password;
+        
+        // Upgrade to hashed password for future logins
+        if (passwordValid) {
+          parent.password = await hashPassword(password);
+          await parent.save();
+        }
+      }
+      
+      if (!passwordValid) {
+        return res.status(401).json({ success: false, error: 'Invalid email or password' });
+      }
+      
       return res.json({
         success: true,
         user: {
@@ -154,11 +228,32 @@ app.post('/api/login', async (req, res) => {
     }
 
     // Check if it's a school
-    const school = await School.findOne({ adminEmail: email, password });
+    const school = await School.findOne({ adminEmail: email });
     if (school) {
       if (!school.verified) {
         return res.status(403).json({ success: false, error: 'Email not verified' });
       }
+      
+      // Check if the password is already hashed
+      let passwordValid = false;
+      if (school.password.startsWith('$2b$') || school.password.startsWith('$2a$')) {
+        // Password is already hashed, compare with bcrypt
+        passwordValid = await comparePassword(password, school.password);
+      } else {
+        // Legacy password (not hashed), do a direct comparison
+        passwordValid = school.password === password;
+        
+        // Upgrade to hashed password for future logins
+        if (passwordValid) {
+          school.password = await hashPassword(password);
+          await school.save();
+        }
+      }
+      
+      if (!passwordValid) {
+        return res.status(401).json({ success: false, error: 'Invalid email or password' });
+      }
+      
       return res.json({
         success: true,
         user: {
@@ -172,6 +267,75 @@ app.post('/api/login', async (req, res) => {
     res.status(401).json({ success: false, error: 'Invalid email or password' });
   } catch (error) {
     console.error('Error during login:', error);
+    res.status(500).json({ success: false, error: 'Failed to login' });
+  }
+});
+
+// Child login endpoint
+app.post('/api/login/child', async (req, res) => {
+  const { username, password } = req.body;
+  
+  try {
+    // Look for the child in our dedicated Child collection
+    const child = await Child.findOne({ username });
+    
+    if (!child) {
+      // For backward compatibility - check parents who might have the child username
+      // We'll need to migrate these later
+      const parent = await Parent.findOne({ children: username });
+      
+      if (!parent) {
+        return res.status(401).json({ success: false, error: 'Invalid username or password' });
+      }
+      
+      // For backward compatibility during transition: accept any password
+      // This is temporary until all children records are migrated
+      console.log('Using backward compatibility mode for child login');
+      return res.json({
+        success: true,
+        user: {
+          username: username,
+          name: username, // Using username as name in legacy mode
+          role: 'child',
+          parentEmail: parent.email,
+          yearGroup: 5 // Default year group
+        }
+      });
+    }
+    
+    // Verify child's password
+    let passwordValid = false;
+    
+    // Check if the password is hashed (using bcrypt)
+    if (child.password.startsWith('$2b$') || child.password.startsWith('$2a$')) {
+      passwordValid = await comparePassword(password, child.password);
+    } else {
+      // Legacy password not yet hashed
+      passwordValid = child.password === password;
+      
+      // Upgrade to hashed password for future logins
+      if (passwordValid) {
+        child.password = await hashPassword(password);
+        await child.save();
+      }
+    }
+    
+    if (!passwordValid) {
+      return res.status(401).json({ success: false, error: 'Invalid username or password' });
+    }
+    
+    return res.json({
+      success: true,
+      user: {
+        username: child.username,
+        name: child.name,
+        role: 'child',
+        parentEmail: child.parentEmail,
+        yearGroup: child.yearGroup
+      }
+    });
+  } catch (error) {
+    console.error('Child login error:', error);
     res.status(500).json({ success: false, error: 'Failed to login' });
   }
 });
@@ -263,6 +427,44 @@ app.get('/api/verify-email', async (req, res) => {
   } catch (error) {
     console.error('Error verifying email:', error);
     res.status(500).json({ success: false, error: 'Failed to verify email' });
+  }
+});
+
+// Add check-email endpoint for two-part login process
+app.post('/api/auth/check-email', async (req, res) => {
+  const { email } = req.body;
+  
+  try {
+    // Check if it's an admin
+    if (email === ADMIN_EMAIL) {
+      return res.json({
+        exists: true,
+        accountType: 'admin'
+      });
+    }
+
+    // Check if it's a parent
+    const parent = await Parent.findOne({ email });
+    if (parent) {
+      return res.json({
+        exists: true,
+        accountType: 'parent'
+      });
+    }
+
+    // Check if it's a school
+    const school = await School.findOne({ adminEmail: email });
+    if (school) {
+      return res.json({
+        exists: true,
+        accountType: 'school'
+      });
+    }
+
+    res.json({ exists: false });
+  } catch (error) {
+    console.error('Error checking email:', error);
+    res.status(500).json({ error: 'Failed to check email' });
   }
 });
 
@@ -370,34 +572,123 @@ app.get('/api/students', async (req, res) => {
 
 // Add Child Endpoint
 app.post('/api/children', async (req, res) => {
-  const { parentEmail, name, username } = req.body;
+  const { parentEmail, name, username, password, year } = req.body;
 
   try {
     const parent = await Parent.findOne({ email: parentEmail });
     if (!parent) {
-      return res.json({ success: false, error: "Parent not found" });
+      return res.status(404).json({ success: false, error: "Parent not found" });
+    }
+    
+    // Check if username is already taken
+    const existingChild = await Child.findOne({ username });
+    if (existingChild) {
+      return res.status(400).json({ 
+        success: false, 
+        error: "Username already exists. Please choose a different username." 
+      });
     }
 
-    const password = `Duck${Math.floor(1000 + Math.random() * 9000)}`;
-    const newChild = {
-      id: uuidv4(),
+    // Generate a secure password if none is provided
+    const childPassword = password || `Duck${Math.floor(1000 + Math.random() * 9000)}`;
+    
+    // Hash the password
+    const hashedPassword = await hashPassword(childPassword);
+    
+    // Create a new child record in our dedicated Child collection
+    const newChild = new Child({
       name,
       username,
-      password,
+      password: hashedPassword,
       parentEmail,
+      year, // Store the year/grade level from the UK system
+      yearGroup: getYearGroupNumber(year), // Convert UK year to numeric value
       progress: []
-    };
+    });
+    
+    await newChild.save();
 
+    // Also add reference in parent's children array
     parent.children.push(username);
     await parent.save();
 
     res.json({
       success: true,
-      child: { username, password }
+      child: { 
+        username, 
+        password: childPassword // Only return plain password once during creation
+      }
     });
   } catch (error) {
     console.error('Error adding child:', error);
     res.status(500).json({ success: false, error: 'Failed to add child' });
+  }
+});
+
+// Helper function to convert UK school year to numeric value
+function getYearGroupNumber(yearString) {
+  const yearMap = {
+    'reception': 0,
+    'year1': 1,
+    'year2': 2,
+    'year3': 3,
+    'year4': 4,
+    'year5': 5,
+    'year6': 6,
+    'year7': 7,
+    'year8': 8,
+    'year9': 9,
+    'year10': 10,
+    'year11': 11
+  };
+  
+  return yearMap[yearString] !== undefined ? yearMap[yearString] : 5; // Default to Year 5 if not found
+}
+
+// Delete Child Endpoint
+app.delete('/api/children/:username', async (req, res) => {
+  const { username } = req.params;
+  const { parentEmail } = req.body;
+
+  try {
+    const parent = await Parent.findOne({ email: parentEmail });
+    if (!parent) {
+      return res.status(404).json({ success: false, error: "Parent not found" });
+    }
+
+    // Check if this child belongs to this parent
+    if (!parent.children.includes(username)) {
+      return res.status(403).json({ success: false, error: "Not authorized to remove this child" });
+    }
+
+    // Remove child from parent's children array
+    parent.children = parent.children.filter(child => child !== username);
+    await parent.save();
+    
+    // Also remove the child from our dedicated Child collection if it exists
+    await Child.findOneAndDelete({ username });
+
+    res.json({
+      success: true,
+      message: 'Child removed successfully'
+    });
+  } catch (error) {
+    console.error('Error removing child:', error);
+    res.status(500).json({ success: false, error: 'Failed to remove child' });
+  }
+});
+
+// Get child details by username (for dashboard)
+app.get('/api/children/:username', async (req, res) => {
+  const { username } = req.params;
+  try {
+    const child = await Child.findOne({ username });
+    if (!child) {
+      return res.status(404).json({ success: false, error: 'Child not found' });
+    }
+    res.json({ success: true, child });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to fetch child' });
   }
 });
 
@@ -426,14 +717,15 @@ app.get('/api/admin/users', async (req, res) => {
   try {
     const parents = await Parent.find();
     const schools = await School.find();
-
+    // Fetch child info for each parent
+    const allChildren = await Child.find();
     const allUsers = [
       ...parents.map(p => ({
         id: p._id,
         email: p.email,
         name: p.name,
         role: 'parent',
-        children: p.children,
+        children: allChildren.filter(c => p.children.includes(c.username)),
         maxChildren: p.maxChildren,
         createdAt: p.createdAt
       })),
@@ -446,7 +738,6 @@ app.get('/api/admin/users', async (req, res) => {
         createdAt: s.createdAt
       }))
     ];
-
     res.json({ success: true, users: allUsers });
   } catch (error) {
     console.error('Error fetching users:', error);
@@ -736,6 +1027,24 @@ app.delete('/api/parent/partners/:parentEmail/:partnerEmail', async (req, res) =
   } catch (error) {
     console.error('Error removing partner:', error);
     res.status(500).json({ success: false, error: 'Failed to remove partner' });
+  }
+});
+
+// Get topics for a given year, grouped by section and level
+app.get('/api/topics/:year', async (req, res) => {
+  const { year } = req.params;
+  try {
+    const topics = await Topic.find({ year }).sort({ section: 1, level: 1, title: 1 });
+    // Group by section and level
+    const grouped = {};
+    topics.forEach(topic => {
+      if (!grouped[topic.section]) grouped[topic.section] = {};
+      if (!grouped[topic.section][topic.level]) grouped[topic.section][topic.level] = [];
+      grouped[topic.section][topic.level].push(topic);
+    });
+    res.json({ success: true, topics: grouped });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to fetch topics' });
   }
 });
 

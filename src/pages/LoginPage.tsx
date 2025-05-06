@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import Logo from '../pictures/logo.svg';
+import API_BASE from '../api';
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -10,9 +11,46 @@ export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [childPassword, setChildPassword] = useState("");
   const [loginType, setLoginType] = useState<"adult" | "child">("adult");
+  const [loginStep, setLoginStep] = useState(1); // Step 1: Email, Step 2: Password
   const { login, loginChild, isLoading } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState("");
+  const [emailExists, setEmailExists] = useState(false);
+  const [accountType, setAccountType] = useState<string>(""); // "parent" or "school"
+
+  const handleCheckEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    
+    if (!email || !email.includes('@')) {
+      setError("Please enter a valid email address");
+      return;
+    }
+    
+    try {
+      // Call API to verify email exists
+      const response = await fetch(`${API_BASE}/api/auth/check-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.exists) {
+        setEmailExists(true);
+        setAccountType(data.accountType || "parent"); // Default to parent if not specified
+        setLoginStep(2);
+      } else {
+        setError("No account found with this email. Please register first.");
+      }
+    } catch (err) {
+      setError("An error occurred while checking your email");
+      console.error(err);
+    }
+  };
 
   const handleAdultSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +61,7 @@ export default function LoginPage() {
       if (success) {
         navigate("/dashboard");
       } else {
-        setError("Invalid email or password");
+        setError("Invalid password");
       }
     } catch (err) {
       setError("An error occurred during login");
@@ -77,7 +115,11 @@ export default function LoginPage() {
             {/* Login Type Toggle */}
             <div className="flex rounded-xl bg-gray-100 p-1 mb-6">
               <button
-                onClick={() => setLoginType("adult")}
+                onClick={() => {
+                  setLoginType("adult");
+                  setLoginStep(1);
+                  setError("");
+                }}
                 className={`flex-1 py-2 rounded-xl text-sm font-medium transition ${
                   loginType === "adult"
                     ? "bg-white shadow text-indigo-700"
@@ -87,7 +129,10 @@ export default function LoginPage() {
                 Parent/School Login
               </button>
               <button
-                onClick={() => setLoginType("child")}
+                onClick={() => {
+                  setLoginType("child");
+                  setError("");
+                }}
                 className={`flex-1 py-2 rounded-xl text-sm font-medium transition ${
                   loginType === "child"
                     ? "bg-white shadow text-indigo-700"
@@ -105,63 +150,111 @@ export default function LoginPage() {
             )}
             
             {loginType === "adult" ? (
-              // Parent/School Login Form
-              <form className="space-y-4" onSubmit={handleAdultSubmit}>
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                  <input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    className="w-full border border-gray-300 rounded-xl p-4 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                  <input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    className="w-full border border-gray-300 rounded-xl p-4 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
+              // Parent/School Login Form - Two-Step Process
+              loginStep === 1 ? (
+                // Step 1: Email
+                <form className="space-y-4" onSubmit={handleCheckEmail}>
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
                     <input
-                      id="remember-me"
-                      type="checkbox"
-                      className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                      id="email"
+                      type="email"
+                      placeholder="you@example.com"
+                      className="w-full border border-gray-300 rounded-xl p-4 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
                     />
-                    <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
-                      Remember me
-                    </label>
                   </div>
                   
-                  <div className="text-sm">
-                    <a href="#" className="text-indigo-600 hover:text-indigo-800">
-                      Forgot password?
-                    </a>
+                  <button 
+                    type="submit" 
+                    className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-4 px-4 rounded-xl font-bold shadow-md hover:shadow-lg transform hover:translate-y-[-1px] transition disabled:opacity-70"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Checking..." : "Next"}
+                  </button>
+                </form>
+              ) : (
+                // Step 2: Password
+                <form className="space-y-4" onSubmit={handleAdultSubmit}>
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email Address</label>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setLoginStep(1);
+                          setPassword("");
+                          setError("");
+                        }}
+                        className="text-xs text-indigo-600 hover:text-indigo-800"
+                      >
+                        Change
+                      </button>
+                    </div>
+                    <div className="p-2 bg-gray-50 rounded-lg mb-4 text-gray-700 border border-gray-200">
+                      {email}
+                      {accountType === "parent" ? (
+                        <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                          Parent Account
+                        </span>
+                      ) : (
+                        <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                          School Account
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-                
-                <button 
-                  type="submit" 
-                  className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-4 px-4 rounded-xl font-bold shadow-md hover:shadow-lg transform hover:translate-y-[-1px] transition disabled:opacity-70"
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Signing in..." : "Sign in"}
-                </button>
-              </form>
+                  
+                  <div>
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      className="w-full border border-gray-300 rounded-xl p-4 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      autoFocus
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <input
+                        id="remember-me"
+                        type="checkbox"
+                        className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                      />
+                      <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
+                        Remember me
+                      </label>
+                    </div>
+                    
+                    <div className="text-sm">
+                      <button 
+                        type="button"
+                        onClick={() => navigate("/reset-password")}
+                        className="text-indigo-600 hover:text-indigo-800"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <button 
+                    type="submit" 
+                    className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-4 px-4 rounded-xl font-bold shadow-md hover:shadow-lg transform hover:translate-y-[-1px] transition disabled:opacity-70"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Signing in..." : "Sign in"}
+                  </button>
+                </form>
+              )
             ) : (
-              // Child Login Form
+              // Child Login Form (Unchanged)
               <form className="space-y-4" onSubmit={handleChildSubmit}>
                 <div>
                   <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">Username</label>
@@ -214,7 +307,7 @@ export default function LoginPage() {
               </form>
             )}
             
-            {loginType === "adult" && (
+            {loginType === "adult" && loginStep === 1 && (
               <div className="mt-6">
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
@@ -245,7 +338,7 @@ export default function LoginPage() {
           
           {/* Additional helper text */}
           <div className="text-center mt-6 text-sm text-gray-600">
-            Having trouble? <a href="#" className="text-indigo-600 hover:underline">Contact support</a>
+            Having trouble? <button onClick={() => navigate("/support/contact")} className="text-indigo-600 hover:underline">Contact support</button>
           </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
 // src/pages/ParentDashboard.tsx
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import API_BASE from '../api';
 import Logo from '../pictures/logo.svg';
 
@@ -36,14 +36,46 @@ const ParentDashboard = () => {
   const availableSlots = user?.availableChildSlots ?? Math.max(0, maxAllowed - currentChildren);
   const canAddMoreChildren = availableSlots > 0;
 
-  // Fetch partners when dashboard loads
+  const [childProgress, setChildProgress] = useState<Record<string, any[]>>({});
+  const [childYears, setChildYears] = useState<Record<string, string>>({});
+  const [topicsByYear, setTopicsByYear] = useState<Record<string, any>>({});
+
   useEffect(() => {
-    if (user && user.email) {
-      fetchPartners();
+    async function fetchAll() {
+      if (!user?.children || user.children.length === 0) return;
+      const progressObj: Record<string, any[]> = {};
+      const yearsObj: Record<string, string> = {};
+      const topicsObj: Record<string, any> = {};
+      for (const username of user.children) {
+        // Fetch child info (progress, year)
+        const res = await fetch(`${API_BASE}/api/children/${username}`);
+        const data = await res.json();
+        if (data.success && data.child) {
+          progressObj[username] = data.child.progress || [];
+          yearsObj[username] = data.child.year || 'reception';
+          // Fetch topics for this child's year if not already fetched
+          if (!topicsObj[yearsObj[username]]) {
+            const tRes = await fetch(`${API_BASE}/api/topics/${yearsObj[username]}`);
+            const tData = await tRes.json();
+            topicsObj[yearsObj[username]] = tData.topics || {};
+          }
+        }
+      }
+      setChildProgress(progressObj);
+      setChildYears(yearsObj);
+      setTopicsByYear(topicsObj);
     }
+    fetchAll();
   }, [user]);
 
-  const fetchPartners = async () => {
+  // Helper to get progress for a topic
+  const getTopicScore = (progressArr: any[], topicTitle: string) => {
+    const entry = progressArr.find((p) => p.topic === topicTitle);
+    return entry ? entry.score : 0;
+  };
+
+  // Fetch partners when dashboard loads
+  const fetchPartners = useCallback(async () => {
     if (!user?.email) return;
     
     setIsLoading(true);
@@ -67,7 +99,13 @@ const ParentDashboard = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.email]);
+
+  useEffect(() => {
+    if (user && user.email) {
+      fetchPartners();
+    }
+  }, [user, fetchPartners]);
 
   // Handle child removal
   const handleRemoveChild = async (username: string) => {
@@ -460,30 +498,38 @@ const ParentDashboard = () => {
 
               {childUsernames.length > 0 ? (
                 <ul className="space-y-6">
-                  {childUsernames.map((username, index) => (
-                    <li key={index} className="border-b pb-6 last:border-0">
+                  {childUsernames.map((username) => (
+                    <li key={username} className="border-b pb-6 last:border-0">
                       <div className="flex flex-col md:flex-row md:justify-between md:items-center">
                         <div className="flex items-center space-x-4 mb-4 md:mb-0">
                           {/* Child avatar - stylized to math theme */}
                           <div className="flex-shrink-0 h-16 w-16 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xl font-bold">
                             {username.charAt(0).toUpperCase()}
                           </div>
-                          <div className="flex-grow">
+                          <div>
                             <h3 className="text-lg font-bold text-indigo-900">{username}</h3>
-                            <div className="w-full bg-gray-200 rounded-full h-3 mt-2 overflow-hidden">
-                              <div 
-                                className="bg-gradient-to-r from-indigo-500 to-purple-600 h-3 rounded-full" 
-                                style={{ width: `50%` }}
-                              ></div>
-                            </div>
-                            <div className="flex justify-between text-sm mt-1">
-                              <p className="text-indigo-700 font-medium">
-                                50% overall progress
-                              </p>
-                              <p className="text-gray-500">
-                                Last active: Today
-                              </p>
-                            </div>
+                            {/* Show topics for this child's year */}
+                            {topicsByYear[childYears[username]] && Object.keys(topicsByYear[childYears[username]]).length > 0 ? (
+                              Object.entries(topicsByYear[childYears[username]]).map(([section, levels]: any) => (
+                                <div key={section} className="mb-2">
+                                  <div className="font-semibold text-indigo-700">{section}</div>
+                                  {Object.entries(levels).map(([level, topicList]: any) => (
+                                    <div key={level} className="ml-2">
+                                      <div className="text-sm font-medium capitalize text-gray-700">{level}</div>
+                                      <ul className="ml-4">
+                                        {topicList.map((topic: any) => (
+                                          <li key={topic._id} className="mb-1">
+                                            <span className="font-bold">{topic.title}:</span> {getTopicScore(childProgress[username] || [], topic.title)}% Correct
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  ))}
+                                </div>
+                              ))
+                            ) : (
+                              <div className="text-gray-500 text-sm">No topics found</div>
+                            )}
                           </div>
                         </div>
                         <div className="flex space-x-3">

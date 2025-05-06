@@ -15,6 +15,7 @@ type User = {
   availableChildSlots?: number;
   parentEmail?: string; // Added for child accounts
   yearGroup?: number; // Added for child accounts
+  year?: string; // Added for child accounts with UK year system
 };
 
 type AuthContextType = {
@@ -23,7 +24,7 @@ type AuthContextType = {
   loginChild: (username: string, password: string) => Promise<boolean>; // New child login method
   register: (userData: any) => Promise<{ success: boolean, message?: string }>;
   logout: () => void;
-  addChild: (childData: { name: string, username: string, password?: string }) => Promise<{ success: boolean, error?: string, child?: any }>;
+  addChild: (childData: { name: string, username: string, password?: string, year: string }) => Promise<{ success: boolean, error?: string, child?: any }>;
   removeChild: (username: string) => Promise<{ success: boolean, error?: string }>;
   isLoading: boolean;
 };
@@ -148,7 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('user');
   };
 
-  const addChild = async (childData: { name: string, username: string, password?: string }) => {
+  const addChild = async (childData: { name: string, username: string, password?: string, year: string }) => {
     if (!user || user.role !== 'parent') {
       return { success: false, error: 'Only parents can add children' };
     }
@@ -176,7 +177,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           parentEmail: user.email,
           name: childData.name,
           username: childData.username,
-          password: childData.password // Now passing the password to the API
+          password: childData.password, // Now passing the password to the API
+          year: childData.year // Add the year to the API request
         })
       });
       
@@ -208,13 +210,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/api/children/${username}`, {
+      const response = await fetch(`${API_BASE}/api/children/${encodeURIComponent(username)}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ parentEmail: user.email })
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
 
       const data = await response.json();
 
@@ -231,7 +237,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error('Remove child error:', error);
-      return { success: false, error: 'Network error occurred' };
+      return { success: false, error: 'Network error occurred when trying to remove child' };
     } finally {
       setIsLoading(false);
     }

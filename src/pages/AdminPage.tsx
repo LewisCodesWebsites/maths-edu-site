@@ -1,7 +1,7 @@
 // src/pages/AdminPage.tsx
 import { useAuth } from '../contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import API_BASE from '../api';
 
 type UserData = {
@@ -43,21 +43,7 @@ const AdminPage = () => {
   const [logsLoading, setLogsLoading] = useState(false);
   const [logsError, setLogsError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (activeTab === 'users') {
-      fetchUsers();
-    }
-    if (activeTab === 'reports') {
-      fetchSystemLogs();
-    }
-  }, [activeTab]);
-
-  // Redirect if not admin
-  if (user?.role !== 'admin') {
-    return <Navigate to="/login" replace />;
-  }
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -80,9 +66,9 @@ const AdminPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchSystemLogs = async () => {
+  const fetchSystemLogs = useCallback(async () => {
     setLogsLoading(true);
     setLogsError(null);
     
@@ -106,7 +92,21 @@ const AdminPage = () => {
     } finally {
       setLogsLoading(false);
     }
-  };
+  }, [user?.email]);
+
+  useEffect(() => {
+    if (activeTab === 'users') {
+      fetchUsers();
+    }
+    if (activeTab === 'reports') {
+      fetchSystemLogs();
+    }
+  }, [activeTab, fetchUsers, fetchSystemLogs]);
+
+  // Redirect if not admin
+  if (user?.role !== 'admin') {
+    return <Navigate to="/login" replace />;
+  }
 
   const handleDeleteUser = async (userId: string) => {
     setLoading(true);

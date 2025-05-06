@@ -8,6 +8,7 @@ const AddChildPage = () => {
   const [childUsername, setChildUsername] = useState('');
   const [childPassword, setChildPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [childYear, setChildYear] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [useAutoPassword, setUseAutoPassword] = useState(true);
@@ -31,6 +32,11 @@ const AddChildPage = () => {
     setMessage('');
     setError('');
 
+    if (!childYear) {
+      setError('Please select a year/grade level for your child');
+      return;
+    }
+
     // Validate passwords match if custom password is selected
     if (!useAutoPassword) {
       if (childPassword.length < 6) {
@@ -47,7 +53,8 @@ const AddChildPage = () => {
       const result = await addChild({
         name: childName,
         username: childUsername,
-        password: useAutoPassword ? undefined : childPassword
+        password: useAutoPassword ? undefined : childPassword,
+        year: childYear
       });
       
       if (result.success) {
@@ -56,6 +63,7 @@ const AddChildPage = () => {
         setChildUsername('');
         setChildPassword('');
         setConfirmPassword('');
+        setChildYear('');
       } else {
         setError('Error adding child: ' + (result.error || 'Unknown error'));
       }
@@ -67,6 +75,22 @@ const AddChildPage = () => {
       setError(errorMessage);
     }
   };
+
+  // Years/grades for UK system
+  const yearOptions = [
+    { value: "reception", label: "Reception (4-5 years)" },
+    { value: "year1", label: "Year 1 (5-6 years)" },
+    { value: "year2", label: "Year 2 (6-7 years)" },
+    { value: "year3", label: "Year 3 (7-8 years)" },
+    { value: "year4", label: "Year 4 (8-9 years)" },
+    { value: "year5", label: "Year 5 (9-10 years)" },
+    { value: "year6", label: "Year 6 (10-11 years)" },
+    { value: "year7", label: "Year 7 (11-12 years)" },
+    { value: "year8", label: "Year 8 (12-13 years)" },
+    { value: "year9", label: "Year 9 (13-14 years)" },
+    { value: "year10", label: "Year 10 (14-15 years)" },
+    { value: "year11", label: "Year 11 (15-16 years)" },
+  ];
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-6">
@@ -126,6 +150,26 @@ const AddChildPage = () => {
               />
               <p className="text-sm text-gray-500 mt-1">
                 This username will be used for login and will be visible to other students.
+              </p>
+            </div>
+            
+            <div>
+              <label className="block mb-2 font-medium">Year/Grade Level</label>
+              <select
+                className="w-full border rounded-xl p-3 bg-white"
+                value={childYear}
+                onChange={(e) => setChildYear(e.target.value)}
+                required
+              >
+                <option value="">Select year/grade...</option>
+                {yearOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-sm text-gray-500 mt-1">
+                This helps us provide age-appropriate content for your child.
               </p>
             </div>
 

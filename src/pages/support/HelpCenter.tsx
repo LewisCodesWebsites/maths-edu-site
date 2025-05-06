@@ -107,9 +107,12 @@ export default function HelpCenter() {
                 ))}
               </ul>
               <div className="mt-4 text-right">
-                <a href="#" className="text-sm text-indigo-600 hover:text-indigo-800 font-medium hover:underline">
+                <button 
+                  onClick={() => console.log(`View all ${category.title} articles`)} 
+                  className="text-sm text-indigo-600 hover:text-indigo-800 font-medium hover:underline"
+                >
                   View all articles →
-                </a>
+                </button>
               </div>
             </div>
           ))}
